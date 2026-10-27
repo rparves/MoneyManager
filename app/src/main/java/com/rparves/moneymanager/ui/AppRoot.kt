@@ -58,6 +58,7 @@ sealed interface Route {
     data object Reports : Route
     data object Planner : Route
     data object Settings : Route
+    data object Categories : Route
     data class Edit(val id: Long? = null, val income: Boolean = false) : Route
 }
 
@@ -106,7 +107,8 @@ fun AppRoot(openAdd: MutableState<Boolean>) {
                     Route.Records -> RecordsScreen(onEdit = { push(Route.Edit(id = it)) })
                     Route.Reports -> ReportsScreen()
                     Route.Planner -> PlannerScreen()
-                    Route.Settings -> SettingsScreen(onBack = { pop() })
+                    Route.Settings -> SettingsScreen(onBack = { pop() }, onCategories = { push(Route.Categories) })
+                    Route.Categories -> CategoriesScreen(onBack = { pop() })
                     is Route.Edit -> AddEditScreen(r.id, r.income, onDone = { pop() })
                 }
             }

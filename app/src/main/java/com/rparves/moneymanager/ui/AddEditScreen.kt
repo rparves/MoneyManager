@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -93,6 +94,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit) {
     var isIncome by remember { mutableStateOf(startIncome) }
     var amount by remember { mutableStateOf("") }
     var catId by remember { mutableStateOf<Long?>(null) }
+    var subId by remember { mutableStateOf<Long?>(null) }
     var accId by remember { mutableStateOf<Long?>(null) }
     var date by remember { mutableStateOf(LocalDate.now()) }
     var note by remember { mutableStateOf("") }
@@ -109,7 +111,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit) {
         if (id != null) {
             dao.txn(id)?.let { t ->
                 original = t; isIncome = t.isIncome; amount = plainAmount(t.amount)
-                catId = t.categoryId; accId = t.accountId; date = t.date.toLocalDate(); note = t.note
+                catId = t.categoryId; subId = t.subId; accId = t.accountId; date = t.date.toLocalDate(); note = t.note
             }
         } else {
             runCatching { focus.requestFocus() }
@@ -129,9 +131,9 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit) {
             date == LocalDate.now() -> System.currentTimeMillis()
             else -> date.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         }
-        val catName = cats.firstOrNull { it.id == c }?.name ?: "Bill"
+        val catName = cats.firstOrNull { it.id == subId }?.name ?: cats.firstOrNull { it.id == c }?.name ?: "Bill"
         val makeBill = monthly && !isIncome && o == null
-        val txn = Txn(id = o?.id ?: 0, isIncome = isIncome, amount = a, categoryId = c, accountId = acc, note = note.trim(), date = millis)
+        val txn = Txn(id = o?.id ?: 0, isIncome = isIncome, amount = a, categoryId = c, accountId = acc, note = note.trim(), date = millis, subId = subId)
         scope.launch {
             dao.upsertTxn(txn)
             if (makeBill) {
@@ -155,7 +157,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit) {
                 listOf("Expense", "Income"), if (isIncome) 1 else 0,
                 { i ->
                     val inc = i == 1
-                    if (inc != isIncome) { isIncome = inc; catId = null; monthly = false; error = null }
+                    if (inc != isIncome) { isIncome = inc; catId = null; subId = null; monthly = false; error = null }
                 },
                 accent,
             )
@@ -192,14 +194,28 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit) {
             }
 
             Text("Category", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
-            val shown = cats.filter { it.isIncome == isIncome }
+            val shown = cats.filter { it.isIncome == isIncome && it.parentId == null }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 shown.chunked(4).forEach { rowCats ->
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         rowCats.forEach { c ->
-                            CategoryTile(c, c.id == catId, accent, Modifier.weight(1f)) { catId = c.id; error = null }
+                            CategoryTile(c, c.id == catId, accent, Modifier.weight(1f)) {
+                                if (catId != c.id) subId = null
+                                catId = c.id; error = null
+                            }
                         }
                         repeat(4 - rowCats.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
+
+            val subs = cats.filter { catId != null && it.parentId == catId }
+            if (subs.isNotEmpty()) {
+                Text("Subcategory", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = subId == null, onClick = { subId = null }, label = { Text("None", fontWeight = FontWeight.SemiBold) })
+                    subs.forEach { s ->
+                        FilterChip(selected = subId == s.id, onClick = { subId = s.id }, label = { Text(s.name, fontWeight = FontWeight.SemiBold) })
                     }
                 }
             }
@@ -207,7 +223,11 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit) {
             Text("Account", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 accounts.forEach { a ->
-                    FilterChip(selected = a.id == accId, onClick = { accId = a.id }, label = { Text(a.name, fontWeight = FontWeight.SemiBold) })
+                    FilterChip(
+                        selected = a.id == accId, onClick = { accId = a.id },
+                        label = { Text(a.name, fontWeight = FontWeight.SemiBold) },
+                        leadingIcon = { Icon(accountIcon(a.type), contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    )
                 }
             }
 

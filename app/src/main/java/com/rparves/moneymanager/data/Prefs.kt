@@ -28,6 +28,21 @@ class Prefs(ctx: Context) {
         get() = _hour.intValue
         set(v) { _hour.intValue = v; sp.edit().putInt("reminder_hour", v).apply() }
 
+    private val _autoBackup = mutableStateOf(sp.getBoolean("auto_backup", false))
+    var autoBackup: Boolean
+        get() = _autoBackup.value
+        set(v) { _autoBackup.value = v; sp.edit().putBoolean("auto_backup", v).apply() }
+
+    private val _backupTree = mutableStateOf(sp.getString("backup_tree", "") ?: "")
+    var backupTree: String
+        get() = _backupTree.value
+        set(v) { _backupTree.value = v; sp.edit().putString("backup_tree", v).apply() }
+
+    private val _lastBackup = mutableStateOf(sp.getLong("last_backup", 0L))
+    var lastBackup: Long
+        get() = _lastBackup.value
+        set(v) { _lastBackup.value = v; sp.edit().putLong("last_backup", v).apply() }
+
     private val _minute = mutableIntStateOf(sp.getInt("reminder_minute", 0))
     var reminderMinute: Int
         get() = _minute.intValue

@@ -2,6 +2,7 @@ package com.rparves.moneymanager.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,7 +64,7 @@ import kotlin.math.min
 
 private enum class Period { Week, Month, Year }
 private data class Span(val start: LocalDate, val end: LocalDate, val label: String)
-private data class Slice(val name: String, val color: Long, val amount: Long)
+private data class Slice(val id: Long, val name: String, val color: Long, val amount: Long)
 
 @Composable
 fun ReportsScreen() {
@@ -72,6 +75,7 @@ fun ReportsScreen() {
     var period by rememberSaveable { mutableStateOf(Period.Month) }
     var offset by rememberSaveable { mutableIntStateOf(0) }
     var incomeView by rememberSaveable { mutableStateOf(false) }
+    var openCat by rememberSaveable { mutableStateOf<Long?>(null) }
     val today = remember { LocalDate.now() }
 
     val span = remember(period, offset) {
@@ -103,10 +107,10 @@ fun ReportsScreen() {
     val savedPct = if (income > 0) "${(income - expense) * 100 / income}%" else "—"
     val slices = remember(rows, incomeView) {
         val grouped = rows.filter { it.t.isIncome == incomeView }
-            .groupBy { it.catName ?: "Other" }
-            .map { (n, l) -> Slice(n, l.first().catColor ?: 0xFF6B7570, l.sumOf { it.t.amount }) }
+            .groupBy { it.t.categoryId }
+            .map { (id, l) -> Slice(id, l.first().catName ?: "Other", l.first().catColor ?: 0xFF6B7570, l.sumOf { it.t.amount }) }
             .sortedByDescending { it.amount }
-        if (grouped.size <= 5) grouped else grouped.take(4) + Slice("Other", 0xFF8A9690, grouped.drop(4).sumOf { it.amount })
+        if (grouped.size <= 5) grouped else grouped.take(4) + Slice(-1, "Everything else", 0xFF8A9690, grouped.drop(4).sumOf { it.amount })
     }
     val total = slices.sumOf { it.amount }
 
@@ -153,9 +157,37 @@ fun ReportsScreen() {
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     slices.forEach { s ->
-                        Row {
+                        val open = openCat == s.id
+                        val canOpen = s.id >= 0
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                                .then(if (canOpen) Modifier.clickable { openCat = if (open) null else s.id } else Modifier)
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             Text(s.name, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                             Text(money(s.amount, cur), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                            if (canOpen) Icon(
+                                if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                contentDescription = if (open) "Hide subcategories" else "Show subcategories",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (open) {
+                            rows.filter { it.t.categoryId == s.id && it.t.isIncome == incomeView }
+                                .groupBy { it.subName ?: "No subcategory" }
+                                .map { (n, l) -> n to l.sumOf { it.t.amount } }
+                                .sortedByDescending { it.second }
+                                .forEach { (n, amt) ->
+                                    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 24.dp, top = 2.dp, bottom = 2.dp)) {
+                                        Text(n, Modifier.weight(1f), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            money(amt, cur) + "  ·  ${amt * 100 / s.amount}%",
+                                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
                         }
                     }
                 }

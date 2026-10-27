@@ -21,6 +21,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -113,11 +117,17 @@ fun TxnItem(row: TxnRow, cur: String, onClick: () -> Unit) {
     ) {
         CategoryBadge(row.catName, row.catColor)
         Column(Modifier.weight(1f)) {
+            val catLabel = listOfNotNull(row.catName, row.subName).joinToString(" › ")
             Text(
-                row.t.note.ifBlank { row.catName ?: "Uncategorized" },
+                row.t.note.ifBlank { row.subName ?: row.catName ?: "Uncategorized" },
                 fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            val meta = listOfNotNull(row.catName.takeIf { row.t.note.isNotBlank() }, row.accName).joinToString(" · ")
+            val metaCat = when {
+                row.t.note.isNotBlank() -> catLabel
+                row.subName != null -> row.catName
+                else -> null
+            }
+            val meta = listOfNotNull(metaCat?.ifBlank { null }, row.accName).joinToString(" · ")
             if (meta.isNotEmpty()) Text(meta, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
         Text(
@@ -172,4 +182,11 @@ fun AmountField(value: String, onChange: (String) -> Unit, label: String, cur: S
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         modifier = modifier.fillMaxWidth(),
     )
+}
+
+fun accountIcon(type: String): ImageVector = when (type) {
+    "bank" -> Icons.Outlined.AccountBalance
+    "wallet" -> Icons.Outlined.PhoneAndroid
+    "card" -> Icons.Outlined.CreditCard
+    else -> Icons.Outlined.Payments
 }

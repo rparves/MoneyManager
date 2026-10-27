@@ -18,6 +18,7 @@ import com.rparves.moneymanager.EXTRA_ADD
 import com.rparves.moneymanager.MainActivity
 import com.rparves.moneymanager.R
 import com.rparves.moneymanager.app
+import com.rparves.moneymanager.data.Backup
 import com.rparves.moneymanager.ui.money
 import com.rparves.moneymanager.ui.startMillis
 import kotlinx.coroutines.CoroutineScope
@@ -45,13 +46,13 @@ object Reminder {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
-    /** Schedules the next reminder at the chosen time (11 PM by default). */
+    /** Schedules the next daily tick (reminder and/or auto backup) at the chosen time, 11 PM by default. */
     fun schedule(ctx: Context) {
         val prefs = ctx.app().prefs
         val am = ctx.getSystemService(AlarmManager::class.java)
         val pi = pending(ctx)
         am.cancel(pi)
-        if (!prefs.reminderOn) return
+        if (!prefs.reminderOn && !prefs.autoBackup) return
         val now = ZonedDateTime.now()
         var next = now.withHour(prefs.reminderHour).withMinute(prefs.reminderMinute).withSecond(0).withNano(0)
         if (!next.isAfter(now)) next = next.plusDays(1)
@@ -118,8 +119,9 @@ class ReminderReceiver : BroadcastReceiver() {
         val ctx = context.applicationContext
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                Reminder.notifyNow(ctx)
-            } catch (_: Exception) {
+                val prefs = ctx.app().prefs
+                if (prefs.reminderOn) runCatching { Reminder.notifyNow(ctx) }
+                if (prefs.autoBackup) runCatching { Backup.autoBackup(ctx) }
             } finally {
                 Reminder.schedule(ctx)
                 result.finish()

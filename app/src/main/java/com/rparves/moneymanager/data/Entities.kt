@@ -13,6 +13,8 @@ data class Account(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val initial: Long = 0,
+    /** cash, bank, wallet or card */
+    val type: String = "cash",
 )
 
 @Entity(tableName = "categories")
@@ -21,6 +23,8 @@ data class Category(
     val name: String,
     val isIncome: Boolean,
     val color: Long,
+    /** null for a main category, otherwise the id of its parent */
+    val parentId: Long? = null,
 )
 
 /** Amounts are stored in minor units (1/100 of the currency). */
@@ -33,6 +37,7 @@ data class Txn(
     val accountId: Long,
     val note: String,
     val date: Long,
+    val subId: Long? = null,
 )
 
 @Entity(tableName = "goals")
@@ -64,7 +69,13 @@ data class TxnRow(
     @Embedded val t: Txn,
     val catName: String?,
     val catColor: Long?,
+    val subName: String?,
     val accName: String?,
 )
 
-data class AccountBalance(val id: Long, val name: String, val balance: Long)
+data class AccountBalance(val id: Long, val name: String, val type: String, val initial: Long, val balance: Long)
+
+object AccountTypes {
+    val all = listOf("cash" to "Cash", "bank" to "Bank", "wallet" to "Mobile wallet", "card" to "Credit card")
+    fun label(type: String) = all.firstOrNull { it.first == type }?.second ?: "Cash"
+}

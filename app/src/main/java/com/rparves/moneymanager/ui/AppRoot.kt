@@ -59,7 +59,7 @@ sealed interface Route {
     data object Planner : Route
     data object Settings : Route
     data object Categories : Route
-    data class Edit(val id: Long? = null, val income: Boolean = false) : Route
+    data class Edit(val id: Long? = null, val income: Boolean = false, val start: String? = null) : Route
 }
 
 private val tabs = setOf(Route.Home, Route.Records, Route.Reports, Route.Planner)
@@ -99,6 +99,7 @@ fun AppRoot(openAdd: MutableState<Boolean>) {
                 when (val r = current) {
                     Route.Home -> HomeScreen(
                         onAdd = { push(Route.Edit(income = it)) },
+                        onSmart = { push(Route.Edit(start = it)) },
                         onEdit = { push(Route.Edit(id = it)) },
                         onSeeAll = { tab(Route.Records) },
                         onSettings = { push(Route.Settings) },
@@ -109,7 +110,7 @@ fun AppRoot(openAdd: MutableState<Boolean>) {
                     Route.Planner -> PlannerScreen()
                     Route.Settings -> SettingsScreen(onBack = { pop() }, onCategories = { push(Route.Categories) })
                     Route.Categories -> CategoriesScreen(onBack = { pop() })
-                    is Route.Edit -> AddEditScreen(r.id, r.income, onDone = { pop() })
+                    is Route.Edit -> AddEditScreen(r.id, r.income, onDone = { pop() }, start = r.start)
                 }
             }
         }

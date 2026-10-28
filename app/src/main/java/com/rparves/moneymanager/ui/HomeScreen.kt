@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.DocumentScanner
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +53,7 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun HomeScreen(
     onAdd: (Boolean) -> Unit,
+    onSmart: (String) -> Unit,
     onEdit: (Long) -> Unit,
     onSeeAll: () -> Unit,
     onSettings: () -> Unit,
@@ -115,6 +118,12 @@ fun HomeScreen(
                 QuickButton("Add income", ex.income, Modifier.weight(1f)) { onAdd(true) }
             }
         }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SmartButton("Scan receipt", Icons.Outlined.DocumentScanner, Modifier.weight(1f)) { onSmart("scan") }
+                SmartButton("Voice entry", Icons.Outlined.Mic, Modifier.weight(1f)) { onSmart("voice") }
+            }
+        }
         if (nextBill != null) item {
             val due = nextBill.nextDue(today)
             val days = ChronoUnit.DAYS.between(today, due)
@@ -175,5 +184,16 @@ private fun QuickButton(label: String, color: Color, modifier: Modifier, onClick
         Icon(Icons.Filled.Add, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(6.dp))
         Text(label, color = color, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun SmartButton(label: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
+    Surface(onClick = onClick, modifier = modifier.height(52.dp), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+        Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(label, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+        }
     }
 }

@@ -68,4 +68,6 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+    // On-device text recognition via Google Play services (model is downloaded by Play services, keeping the APK small)
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
 }

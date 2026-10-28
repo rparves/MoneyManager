@@ -34,6 +34,14 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import com.rparves.moneymanager.ai.Llm
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -248,6 +256,68 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                         }
                     }
                     if (prefs.reminderOn) TextButton(onClick = { scope.launch { Reminder.notifyNow(ctx) } }) { Text("Send a test reminder") }
+                }
+            }
+
+            // Smart entry
+            Panel {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Scan & voice (AI)", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                    Text(
+                        "Receipt scanning and voice entry work on this phone without a key. Adding an AI key makes them far more accurate.",
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("none" to "On-device only", "gemini" to "Google Gemini", "claude" to "Anthropic Claude").forEach { (key, label) ->
+                            FilterChip(
+                                selected = prefs.aiProvider == key,
+                                onClick = { if (prefs.aiProvider != key) { prefs.aiProvider = key; prefs.aiModel = "" } },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                    if (prefs.aiProvider != "none") {
+                        var showKey by remember { mutableStateOf(false) }
+                        OutlinedTextField(
+                            value = prefs.aiKey, onValueChange = { prefs.aiKey = it.trim() },
+                            label = { Text("API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { showKey = !showKey }) {
+                                    Icon(
+                                        if (showKey) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                        contentDescription = if (showKey) "Hide key" else "Show key",
+                                    )
+                                }
+                            },
+                        )
+                        OutlinedTextField(
+                            value = prefs.aiModel, onValueChange = { prefs.aiModel = it.trim() },
+                            label = { Text("Model") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text(Llm.defaultModel(prefs.aiProvider)) },
+                            supportingText = { Text("Leave blank to use " + Llm.defaultModel(prefs.aiProvider)) },
+                        )
+                        Text(
+                            if (prefs.aiProvider == "gemini") "Get a free key at aistudio.google.com → Get API key. On the free tier, Google may use the data to improve its models."
+                            else "Get a key at console.anthropic.com → API keys. Usage is billed to your Anthropic account.",
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            "Receipt images and what you say are sent to this provider to fill in the entry. The key stays on this phone and isn't included in backups.",
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextButton(
+                            enabled = prefs.aiKey.isNotBlank(),
+                            onClick = { runTask { "Connected: " + Llm.ask(ctx, "Reply with the single word OK.", null).trim().take(40) } },
+                        ) { Text("Test connection") }
+                    }
+                    Text("Voice language", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("" to "Phone default", "en-US" to "English", "bn-BD" to "বাংলা").forEach { (key, label) ->
+                            FilterChip(selected = prefs.voiceLang == key, onClick = { prefs.voiceLang = key }, label = { Text(label) })
+                        }
+                    }
                 }
             }
 

@@ -47,4 +47,30 @@ class Prefs(ctx: Context) {
     var reminderMinute: Int
         get() = _minute.intValue
         set(v) { _minute.intValue = v; sp.edit().putInt("reminder_minute", v).apply() }
+
+    // AI settings live in their own file, which is excluded from Android cloud backup.
+    private val ai = ctx.getSharedPreferences("ai", Context.MODE_PRIVATE)
+
+    private val _aiProvider = mutableStateOf(ai.getString("provider", "none") ?: "none")
+    /** none, gemini or claude */
+    var aiProvider: String
+        get() = _aiProvider.value
+        set(v) { _aiProvider.value = v; ai.edit().putString("provider", v).apply() }
+
+    private val _aiKey = mutableStateOf(ai.getString("key", "") ?: "")
+    var aiKey: String
+        get() = _aiKey.value
+        set(v) { _aiKey.value = v; ai.edit().putString("key", v).apply() }
+
+    private val _aiModel = mutableStateOf(ai.getString("model", "") ?: "")
+    /** blank = provider default */
+    var aiModel: String
+        get() = _aiModel.value
+        set(v) { _aiModel.value = v; ai.edit().putString("model", v).apply() }
+
+    private val _voiceLang = mutableStateOf(sp.getString("voice_lang", "") ?: "")
+    /** blank = phone default, otherwise a BCP-47 tag like en-US or bn-BD */
+    var voiceLang: String
+        get() = _voiceLang.value
+        set(v) { _voiceLang.value = v; sp.edit().putString("voice_lang", v).apply() }
 }

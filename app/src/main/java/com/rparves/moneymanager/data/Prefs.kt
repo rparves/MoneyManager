@@ -73,4 +73,10 @@ class Prefs(ctx: Context) {
     var voiceLang: String
         get() = _voiceLang.value
         set(v) { _voiceLang.value = v; sp.edit().putString("voice_lang", v).apply() }
+
+    private val _themeMode = mutableStateOf(sp.getString("theme_mode", "dark") ?: "dark")
+    /** dark, light or system */
+    var themeMode: String
+        get() = _themeMode.value
+        set(v) { _themeMode.value = v; sp.edit().putString("theme_mode", v).apply() }
 }

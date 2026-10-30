@@ -24,7 +24,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.DonutLarge
+import androidx.compose.foundation.background
+import androidx.compose.material3.HorizontalDivider
+import com.rparves.moneymanager.ui.theme.LocalExtra
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.FloatingActionButton
@@ -119,25 +122,26 @@ fun AppRoot(openAdd: MutableState<Boolean>) {
 
 @Composable
 private fun BottomBar(current: Route, onTab: (Route) -> Unit, onAdd: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
+    val ex = LocalExtra.current
+    Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+        HorizontalDivider(color = ex.border)
         Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().height(68.dp).padding(horizontal = 6.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().height(66.dp).padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceAround,
         ) {
             NavItem(Icons.Outlined.Home, "Home", current == Route.Home) { onTab(Route.Home) }
             NavItem(Icons.AutoMirrored.Outlined.ReceiptLong, "Records", current == Route.Records) { onTab(Route.Records) }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                FloatingActionButton(
-                    onClick = onAdd,
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    elevation = FloatingActionButtonDefaults.elevation(4.dp),
-                    modifier = Modifier.size(56.dp),
-                ) { Icon(Icons.Filled.Add, contentDescription = "Add transaction", modifier = Modifier.size(28.dp)) }
+                Surface(
+                    onClick = onAdd, shape = RoundedCornerShape(16.dp), color = ex.expense,
+                    modifier = Modifier.size(50.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add transaction", tint = ex.onAccent, modifier = Modifier.size(26.dp))
+                    }
+                }
             }
-            NavItem(Icons.Outlined.BarChart, "Reports", current == Route.Reports) { onTab(Route.Reports) }
+            NavItem(Icons.Outlined.DonutLarge, "Insights", current == Route.Reports) { onTab(Route.Reports) }
             NavItem(Icons.Outlined.Savings, "Planner", current == Route.Planner) { onTab(Route.Planner) }
         }
     }
@@ -145,7 +149,7 @@ private fun BottomBar(current: Route, onTab: (Route) -> Unit, onAdd: () -> Unit)
 
 @Composable
 private fun RowScope.NavItem(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
-    val c = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val c = if (selected) LocalExtra.current.expense else LocalExtra.current.muted
     Column(
         Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
@@ -153,6 +157,6 @@ private fun RowScope.NavItem(icon: ImageVector, label: String, selected: Boolean
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(icon, contentDescription = null, tint = c)
-        Text(label, fontSize = 11.sp, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold, color = c)
+        Text(label, fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.SemiBold, color = c)
     }
 }

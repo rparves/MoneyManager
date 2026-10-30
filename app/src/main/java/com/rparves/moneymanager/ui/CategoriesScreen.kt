@@ -76,7 +76,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
             TextButton(onClick = { editing = CatEdit(null, null, incomeTab) }) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Category", fontWeight = FontWeight.Bold)
+                Text("Category", fontWeight = FontWeight.Medium)
             }
         }
         Column(Modifier.padding(horizontal = 20.dp)) {
@@ -100,7 +100,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                     ) {
                         CategoryBadge(c.name, c.color)
                         Column(Modifier.weight(1f)) {
-                            Text(c.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text(c.name, fontWeight = FontWeight.Medium, fontSize = 15.sp)
                             Text(
                                 when (subs.size) { 0 -> "No subcategories"; 1 -> "1 subcategory"; else -> "${subs.size} subcategories" },
                                 fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -130,7 +130,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                         TextButton(onClick = { editing = CatEdit(null, c, c.isIncome) }, modifier = Modifier.padding(start = 54.dp, bottom = 4.dp)) {
                             Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Add subcategory", fontWeight = FontWeight.Bold)
+                            Text("Add subcategory", fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -185,7 +185,7 @@ private fun CategoryDialog(e: CatEdit, all: List<Category>, onDismiss: () -> Uni
                     )
                     if (dup) Text("That name is already used here.", color = ex.expense, fontSize = 12.sp)
                     if (!isSub) {
-                        Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Color", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Seed.palette.forEachIndexed { i, p ->
                                 val on = p == color
@@ -206,7 +206,7 @@ private fun CategoryDialog(e: CatEdit, all: List<Category>, onDismiss: () -> Uni
                 TextButton(onClick = {
                     if (existing != null) scope.launch { dao.deleteCategory(existing, fallback?.id) }
                     onDismiss()
-                }) { Text("Delete", color = ex.expense, fontWeight = FontWeight.Bold) }
+                }) { Text("Delete", color = ex.expense, fontWeight = FontWeight.Medium) }
             } else {
                 TextButton(enabled = name.isNotBlank() && !dup, onClick = {
                     val n = name.trim()
@@ -219,7 +219,7 @@ private fun CategoryDialog(e: CatEdit, all: List<Category>, onDismiss: () -> Uni
                         }
                     }
                     onDismiss()
-                }) { Text("Save", fontWeight = FontWeight.Bold) }
+                }) { Text("Save", fontWeight = FontWeight.Medium) }
             }
         },
         dismissButton = {

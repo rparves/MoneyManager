@@ -1,8 +1,9 @@
 package com.rparves.moneymanager.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,11 +48,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rparves.moneymanager.data.TxnRow
+import com.rparves.moneymanager.ui.theme.LocalDark
 import com.rparves.moneymanager.ui.theme.LocalExtra
 
 @Composable
 fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
+    Surface(
+        modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, LocalExtra.current.border),
+    ) {
         Column(content = content)
     }
 }
@@ -66,8 +71,8 @@ fun EmptyNote(text: String) {
 @Composable
 fun SectionHeader(title: String, action: String? = null, onAction: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-        if (action != null) TextButton(onClick = onAction) { Text(action, fontWeight = FontWeight.Bold) }
+        Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        if (action != null) TextButton(onClick = onAction) { Text(action, fontWeight = FontWeight.Medium) }
     }
 }
 
@@ -84,7 +89,7 @@ fun TopRow(
     ) {
         if (onBack != null) IconButton(onClick = onBack) { Icon(backIcon, contentDescription = "Back") }
         else Spacer(Modifier.width(12.dp))
-        Text(title, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+        Text(title, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
         actions()
     }
 }
@@ -92,18 +97,18 @@ fun TopRow(
 @Composable
 fun categoryInk(color: Long?): Color {
     val c = Color(color ?: 0xFF6B7570)
-    return if (isSystemInDarkTheme()) lerp(c, Color.White, 0.45f) else c
+    return if (LocalDark.current) lerp(c, Color.White, 0.45f) else c
 }
 
 @Composable
-fun CategoryBadge(name: String?, color: Long?, size: Dp = 40.dp) {
+fun CategoryBadge(name: String?, color: Long?, size: Dp = 38.dp) {
     val c = Color(color ?: 0xFF6B7570)
-    val dark = isSystemInDarkTheme()
+    val dark = LocalDark.current
     Box(
-        Modifier.size(size).clip(RoundedCornerShape(12.dp)).background(c.copy(alpha = if (dark) 0.30f else 0.14f)),
+        Modifier.size(size).clip(CircleShape).background(c.copy(alpha = if (dark) 0.28f else 0.13f)),
         contentAlignment = Alignment.Center,
     ) {
-        Text((name ?: "?").take(1).uppercase(), color = categoryInk(color), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+        Text((name ?: "?").take(1).uppercase(), color = categoryInk(color), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
     }
 }
 
@@ -120,7 +125,7 @@ fun TxnItem(row: TxnRow, cur: String, onClick: () -> Unit) {
             val catLabel = listOfNotNull(row.catName, row.subName).joinToString(" › ")
             Text(
                 row.t.note.ifBlank { row.subName ?: row.catName ?: "Uncategorized" },
-                fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
             val metaCat = when {
                 row.t.note.isNotBlank() -> catLabel
@@ -132,14 +137,15 @@ fun TxnItem(row: TxnRow, cur: String, onClick: () -> Unit) {
         }
         Text(
             signed(row.t.amount, row.t.isIncome, cur),
-            color = if (row.t.isIncome) ex.income else ex.expense,
-            fontWeight = FontWeight.ExtraBold, fontSize = 15.sp,
+            color = if (row.t.isIncome) ex.income else MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
         )
     }
 }
 
 @Composable
 fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, activeColor: Color = MaterialTheme.colorScheme.onSurface) {
+    val activeText = if (activeColor == MaterialTheme.colorScheme.onSurface) MaterialTheme.colorScheme.surface else LocalExtra.current.onAccent
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -148,13 +154,13 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, act
             val on = i == selected
             Box(
                 Modifier.weight(1f).height(42.dp).clip(RoundedCornerShape(12.dp))
-                    .background(if (on) MaterialTheme.colorScheme.surface else Color.Transparent)
+                    .background(if (on) activeColor else Color.Transparent)
                     .selectable(selected = on, role = Role.Tab, onClick = { onSelect(i) }),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    label, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp,
-                    color = if (on) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                    label, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+                    color = if (on) activeText else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -163,10 +169,10 @@ fun Segmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, act
 
 @Composable
 fun StatTile(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
+    Surface(modifier, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, LocalExtra.current.border)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

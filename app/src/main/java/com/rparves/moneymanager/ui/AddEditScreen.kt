@@ -262,7 +262,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                 ) {
                     Icon(Icons.Outlined.DocumentScanner, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Scan receipt", fontWeight = FontWeight.Bold)
+                    Text("Scan receipt", fontWeight = FontWeight.Medium)
                 }
                 OutlinedButton(
                     onClick = { startVoice() }, enabled = busyMsg == null,
@@ -270,7 +270,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                 ) {
                     Icon(Icons.Outlined.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Speak", fontWeight = FontWeight.Bold)
+                    Text("Speak", fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -300,7 +300,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                         Text(
                             (if (r.usedAi) "Filled in by AI" else "Filled in on this phone") +
                                 (if (r.draft.lowConfidence) " · please double-check" else ""),
-                            fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                         r.heard?.let { Text("Heard: “$it”", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer) }
                         r.warning?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer) }
@@ -327,9 +327,9 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
 
             Panel {
                 Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Amount", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Amount", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(cur, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = accent)
+                        Text(cur, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, color = accent)
                         Spacer(Modifier.width(6.dp))
                         BasicTextField(
                             value = amount,
@@ -339,14 +339,14 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                                 }
                             },
                             singleLine = true,
-                            textStyle = TextStyle(fontSize = 42.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface),
+                            textStyle = TextStyle(fontSize = 42.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             cursorBrush = SolidColor(accent),
                             modifier = Modifier.width(200.dp).focusRequester(focus).semantics { contentDescription = "Amount" },
                             decorationBox = { inner ->
                                 Box {
                                     if (amount.isEmpty()) {
-                                        Text("0", fontSize = 42.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                                        Text("0", fontSize = 42.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                                     }
                                     inner()
                                 }
@@ -356,7 +356,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                 }
             }
 
-            Text("Category", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+            Text("Category", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
             val shown = cats.filter { it.isIncome == isIncome && it.parentId == null }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 shown.chunked(4).forEach { rowCats ->
@@ -374,7 +374,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
 
             val subs = cats.filter { catId != null && it.parentId == catId }
             if (subs.isNotEmpty()) {
-                Text("Subcategory", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                Text("Subcategory", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = subId == null, onClick = { subId = null }, label = { Text("None", fontWeight = FontWeight.SemiBold) })
                     subs.forEach { s ->
@@ -383,7 +383,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                 }
             }
 
-            Text("Account", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+            Text("Account", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 accounts.forEach { a ->
                     FilterChip(
@@ -401,7 +401,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
             ) {
                 Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Date: " + relativeDay(date), fontWeight = FontWeight.Bold)
+                Text("Date: " + relativeDay(date), fontWeight = FontWeight.Medium)
             }
 
             OutlinedTextField(
@@ -420,13 +420,13 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
                     Checkbox(checked = monthly, onCheckedChange = null)
                     Spacer(Modifier.width(10.dp))
                     Column {
-                        Text("Repeat monthly", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Repeat monthly", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                         Text("Adds it to Planner as a bill with reminders", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
 
-            error?.let { Text(it, color = ex.expense, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+            error?.let { Text(it, color = ex.expense, fontWeight = FontWeight.Medium, fontSize = 13.sp) }
             Spacer(Modifier.height(4.dp))
         }
 
@@ -437,7 +437,7 @@ fun AddEditScreen(id: Long?, startIncome: Boolean, onDone: () -> Unit, start: St
             shape = RoundedCornerShape(18.dp),
             colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = ex.onAccent),
         ) {
-            Text(if (isIncome) "Save income" else "Save expense", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+            Text(if (isIncome) "Save income" else "Save expense", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         }
     }
 
@@ -516,7 +516,7 @@ private fun CategoryTile(c: Category, selected: Boolean, accent: Color, modifier
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         CategoryBadge(c.name, c.color, 34.dp)
-        Text(c.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(c.name, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

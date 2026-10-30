@@ -178,14 +178,26 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
             // Profile
             Panel {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Profile", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                    Text("Profile", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     OutlinedTextField(prefs.name, { prefs.name = it }, label = { Text("Your name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    Text("Currency", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Currency", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         currencies.forEach { c ->
-                            FilterChip(selected = prefs.currency == c, onClick = { prefs.currency = c }, label = { Text(c, fontWeight = FontWeight.Bold) })
+                            FilterChip(selected = prefs.currency == c, onClick = { prefs.currency = c }, label = { Text(c, fontWeight = FontWeight.Medium) })
                         }
                     }
+                }
+            }
+
+            // Appearance
+            Panel {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Appearance", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Segmented(
+                        listOf("Dark", "Light", "Phone setting"),
+                        when (prefs.themeMode) { "light" -> 1; "system" -> 2; else -> 0 },
+                        { prefs.themeMode = listOf("dark", "light", "system")[it] },
+                    )
                 }
             }
 
@@ -194,8 +206,8 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                 NavRow(Icons.Outlined.Category, "Categories & subcategories", "Add, rename, recolor or delete", onCategories)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Accounts", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { editAccount = AccountEdit(null) }) { Text("Add account", fontWeight = FontWeight.Bold) }
+                    Text("Accounts", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { editAccount = AccountEdit(null) }) { Text("Add account", fontWeight = FontWeight.Medium) }
                 }
                 balances.forEach { b ->
                     Row(
@@ -215,11 +227,11 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                                     b.balance == 0L -> "Nothing owed"
                                     else -> money(b.balance, prefs.currency) + " credit"
                                 },
-                                fontWeight = FontWeight.ExtraBold, color = if (b.balance < 0) ex.expense else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold, color = if (b.balance < 0) ex.expense else MaterialTheme.colorScheme.onSurface,
                             )
                         } else {
                             Text(
-                                money(b.balance, prefs.currency), fontWeight = FontWeight.ExtraBold,
+                                money(b.balance, prefs.currency), fontWeight = FontWeight.SemiBold,
                                 color = if (b.balance < 0) ex.expense else MaterialTheme.colorScheme.onSurface,
                             )
                         }
@@ -233,7 +245,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Daily reminder", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                            Text("Daily reminder", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                             Text("A nudge to record the day's expenses", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(checked = prefs.reminderOn, onCheckedChange = {
@@ -245,7 +257,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                     OutlinedButton(onClick = { showTime = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
                         Icon(Icons.Outlined.Schedule, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Every day at " + timeLabel(prefs.reminderHour, prefs.reminderMinute), fontWeight = FontWeight.Bold)
+                        Text("Every day at " + timeLabel(prefs.reminderHour, prefs.reminderMinute), fontWeight = FontWeight.Medium)
                     }
                     if (prefs.reminderOn && !notifGranted) {
                         Notice("Notifications are turned off for this app, so the reminder can't appear.", "Allow") { askNotifications() }
@@ -262,7 +274,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
             // Smart entry
             Panel {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Scan & voice (AI)", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                    Text("Scan & voice (AI)", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     Text(
                         "Receipt scanning and voice entry work on this phone without a key. Adding an AI key makes them far more accurate.",
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -312,7 +324,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                             onClick = { runTask { "Connected: " + Llm.ask(ctx, "Reply with the single word OK.", null).trim().take(40) } },
                         ) { Text("Test connection") }
                     }
-                    Text("Voice language", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Voice language", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("" to "Phone default", "en-US" to "English", "bn-BD" to "বাংলা").forEach { (key, label) ->
                             FilterChip(selected = prefs.voiceLang == key, onClick = { prefs.voiceLang = key }, label = { Text(label) })
@@ -323,7 +335,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
 
             // Data
             Panel {
-                Text("Export & import", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 2.dp))
+                Text("Export & import", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 2.dp))
                 NavRow(Icons.Outlined.FileUpload, "Export to CSV", "Opens in Excel or Google Sheets") {
                     exportLauncher.launch("MoneyManager-transactions-$today.csv")
                 }
@@ -333,7 +345,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
             }
 
             Panel {
-                Text("Backup", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 2.dp))
+                Text("Backup", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 2.dp))
                 NavRow(Icons.Outlined.Backup, "Back up to a file", "Everything: transactions, categories, accounts, goals, bills, settings") {
                     backupLauncher.launch("MoneyManager-backup-$today.json")
                 }
@@ -343,7 +355,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Daily automatic backup", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Daily automatic backup", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                         Text(
                             if (prefs.backupTree.isBlank()) "Saves a copy to a folder you choose, every night"
                             else "Folder: " + Backup.folderLabel(prefs.backupTree),
@@ -408,7 +420,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                 TextButton(onClick = {
                     pendingRestore = null
                     runTask { "Restored ${Backup.restore(ctx, uri)} transactions" }
-                }) { Text("Restore", color = ex.expense, fontWeight = FontWeight.Bold) }
+                }) { Text("Restore", color = ex.expense, fontWeight = FontWeight.Medium) }
             },
             dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Cancel") } },
         )
@@ -426,7 +438,7 @@ private fun NavRow(icon: ImageVector, title: String, subtitle: String, onClick: 
     ) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Column(Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(title, fontWeight = FontWeight.Medium, fontSize = 14.sp)
             Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -458,7 +470,7 @@ private fun AccountDialog(existing: AccountBalance?, accountCount: Int, cur: Str
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(name, { name = it }, label = { Text("Account name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    Text("Type", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Type", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AccountTypes.all.forEach { (key, label) ->
                             FilterChip(
@@ -490,7 +502,7 @@ private fun AccountDialog(existing: AccountBalance?, accountCount: Int, cur: Str
                         }
                     }
                     onDismiss()
-                }) { Text("Delete", color = ex.expense, fontWeight = FontWeight.Bold) }
+                }) { Text("Delete", color = ex.expense, fontWeight = FontWeight.Medium) }
             } else {
                 TextButton(enabled = name.isNotBlank(), onClick = {
                     val entered = parseMinor(opening) ?: 0L
@@ -500,7 +512,7 @@ private fun AccountDialog(existing: AccountBalance?, accountCount: Int, cur: Str
                         else dao.updateAccount(Account(existing.id, name.trim(), initial, type))
                     }
                     onDismiss()
-                }) { Text("Save", fontWeight = FontWeight.Bold) }
+                }) { Text("Save", fontWeight = FontWeight.Medium) }
             }
         },
         dismissButton = {
@@ -522,6 +534,6 @@ private fun Notice(message: String, action: String, onAction: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(message, Modifier.weight(1f), fontSize = 12.sp, color = ex.warnSub)
-        TextButton(onClick = onAction) { Text(action, fontWeight = FontWeight.Bold, color = ex.warnOn) }
+        TextButton(onClick = onAction) { Text(action, fontWeight = FontWeight.Medium, color = ex.warnOn) }
     }
 }

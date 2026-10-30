@@ -81,7 +81,7 @@ fun PlannerScreen() {
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { Text("Planner", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold) }
+        item { Text("Planner", fontSize = 24.sp, fontWeight = FontWeight.SemiBold) }
         item { SectionHeader("Savings goals", "Add goal") { addGoal = true } }
         if (goals.isEmpty()) item { EmptyNote("Set a goal, like an emergency fund, and add to it as you save.") }
         items(goals, key = { "g" + it.id }) { g -> GoalCard(g, cur) { goalFor = g } }
@@ -248,10 +248,10 @@ private fun GoalCard(g: Goal, cur: String, onClick: () -> Unit) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(g.name, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(g.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("${money(g.saved, cur)} of ${money(g.target, cur)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text(if (pct >= 100) "Reached" else "$pct%", fontWeight = FontWeight.ExtraBold, color = ex.income)
+                Text(if (pct >= 100) "Reached" else "$pct%", fontWeight = FontWeight.SemiBold, color = ex.income)
             }
             Box(
                 Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
@@ -280,11 +280,11 @@ private fun BillRow(b: Bill, today: LocalDate, cur: String, onToggle: () -> Unit
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(due.fmt("MMM").uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = ex.warnSub, lineHeight = 11.sp)
-            Text(due.dayOfMonth.toString(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = ex.warnSub, lineHeight = 17.sp)
+            Text(due.fmt("MMM").uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = ex.warnSub, lineHeight = 11.sp)
+            Text(due.dayOfMonth.toString(), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = ex.warnSub, lineHeight = 17.sp)
         }
         Column(Modifier.weight(1f)) {
-            Text(b.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(b.name, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 if (paid) "Paid · next due ${due.fmt("MMM d")}" else dueLabel(days),
                 fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
@@ -296,7 +296,7 @@ private fun BillRow(b: Bill, today: LocalDate, cur: String, onToggle: () -> Unit
             )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(money(b.amount, cur), fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+            Text(money(b.amount, cur), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             if (paid) {
                 FilledTonalButton(onClick = onToggle, contentPadding = PaddingValues(horizontal = 12.dp), modifier = Modifier.height(34.dp)) { Text("Paid", fontSize = 12.sp) }
             } else {

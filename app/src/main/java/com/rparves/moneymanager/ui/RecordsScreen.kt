@@ -72,7 +72,7 @@ fun RecordsScreen(onEdit: (Long) -> Unit) {
         } else {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { ym = ym.minusMonths(1) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous month") }
-                Text(ym.label(), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                Text(ym.label(), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 IconButton(onClick = { ym = ym.plusMonths(1) }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month") }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { searching = true }) { Icon(Icons.Outlined.Search, contentDescription = "Search") }
@@ -125,12 +125,12 @@ private fun DayHeader(d: LocalDate, inc: Long, exp: Long, cur: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(d.dayOfMonth.toString(), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text(d.dayOfMonth.toString(), fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         Column(Modifier.weight(1f)) {
-            Text(d.fmt("EEEE"), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(d.fmt("EEEE"), fontWeight = FontWeight.Medium, fontSize = 13.sp)
             Text(d.fmt("MMM yyyy"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (inc > 0) Text("+" + money(inc, cur), color = ex.income, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-        if (exp > 0) Text("−" + money(exp, cur), color = ex.expense, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        if (inc > 0) Text("+" + money(inc, cur), color = ex.income, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+        if (exp > 0) Text("−" + money(exp, cur), color = ex.expense, fontWeight = FontWeight.Medium, fontSize = 13.sp)
     }
 }

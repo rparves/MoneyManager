@@ -118,11 +118,11 @@ fun ReportsScreen() {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Reports", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text("Insights", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         Segmented(listOf("Week", "Month", "Year"), period.ordinal, { period = Period.entries[it]; offset = 0 })
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { offset-- }) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous period") }
-            Text(span.label, Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(span.label, Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Medium, fontSize = 15.sp)
             IconButton(onClick = { offset++ }, enabled = offset < 0) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next period") }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -134,7 +134,7 @@ fun ReportsScreen() {
         Panel {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (incomeView) "Income by category" else "Spending by category", Modifier.weight(1f), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                    Text(if (incomeView) "Income by category" else "Spending by category", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     TextButton(onClick = { incomeView = !incomeView }) { Text(if (incomeView) "Show spending" else "Show income") }
                 }
                 if (total == 0L) {
@@ -149,7 +149,7 @@ fun ReportsScreen() {
                             slices.forEach { s ->
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(Color(s.color)))
-                                    Text(s.name, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(s.name, Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text("${s.amount * 100 / total}%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
@@ -166,7 +166,7 @@ fun ReportsScreen() {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(s.name, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                            Text(money(s.amount, cur), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(money(s.amount, cur), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                             if (canOpen) Icon(
                                 if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                                 contentDescription = if (open) "Hide subcategories" else "Show subcategories",
@@ -197,7 +197,7 @@ fun ReportsScreen() {
         Panel {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Income vs expenses", Modifier.weight(1f), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                    Text("Income vs expenses", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     LegendDot(ex.income, "Income")
                     Spacer(Modifier.width(10.dp))
                     LegendDot(ex.expense, "Expenses")
@@ -234,7 +234,7 @@ fun ReportsScreen() {
                         Text(
                             m.format(DateTimeFormatter.ofPattern("MMM", Locale.US)),
                             Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 11.sp,
-                            fontWeight = if (m == nowYm) FontWeight.ExtraBold else FontWeight.SemiBold,
+                            fontWeight = if (m == nowYm) FontWeight.SemiBold else FontWeight.SemiBold,
                             color = if (m == nowYm) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -250,7 +250,7 @@ private fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(color))
         Spacer(Modifier.width(5.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -270,8 +270,8 @@ private fun Donut(slices: List<Slice>, total: Long, cur: String, modifier: Modif
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Total", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(moneyShort(total, cur), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+            Text("Total", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(moneyShort(total, cur), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

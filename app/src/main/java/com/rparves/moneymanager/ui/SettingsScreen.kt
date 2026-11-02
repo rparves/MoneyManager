@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.foundation.text.KeyboardOptions
@@ -136,12 +137,17 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
     }
 
     val today = LocalDate.now().toString()
+    val xlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ) { uri ->
+        if (uri != null) runTask { "Exported ${Backup.exportXlsx(ctx, uri)} transactions to Excel" }
+    }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) runTask { "Exported ${Backup.exportCsv(ctx, uri)} transactions" }
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) runTask {
-            val r = Backup.importCsv(ctx, uri)
+            val r = Backup.importFile(ctx, uri)
             buildString {
                 append("Imported ${r.added} transactions")
                 if (r.duplicates > 0) append(", ${r.duplicates} already existed")
@@ -336,10 +342,13 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
             // Data
             Panel {
                 Text("Export & import", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 2.dp))
-                NavRow(Icons.Outlined.FileUpload, "Export to CSV", "Opens in Excel or Google Sheets") {
+                NavRow(Icons.Outlined.TableChart, "Export to Excel (.xlsx)", "Real dates and numbers, ready to sort, filter and total") {
+                    xlsxLauncher.launch("MoneyManager-transactions-$today.xlsx")
+                }
+                NavRow(Icons.Outlined.FileUpload, "Export to CSV", "Plain text, for other apps") {
                     exportLauncher.launch("MoneyManager-transactions-$today.csv")
                 }
-                NavRow(Icons.Outlined.FileDownload, "Import from CSV", "Columns: Date, Type, Account, Category, Subcategory, Amount, Note") {
+                NavRow(Icons.Outlined.FileDownload, "Import from Excel or CSV", "Columns: Date, Type, Account, Category, Subcategory, Amount, Note") {
                     importLauncher.launch(arrayOf("*/*"))
                 }
             }

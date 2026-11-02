@@ -66,6 +66,28 @@ object Backup {
         txns.size
     }
 
+    // ---------- Excel export ----------
+    suspend fun exportXlsx(ctx: Context, uri: Uri): Int = withContext(Dispatchers.IO) {
+        val dao = ctx.app().dao
+        val accs = dao.allAccounts().associateBy { it.id }
+        val cats = dao.allCategories().associateBy { it.id }
+        val txns = dao.allTxns()
+        val zone = ZoneId.systemDefault()
+        val rows = txns.map { t ->
+            listOf<Any>(
+                Instant.ofEpochMilli(t.date).atZone(zone).toLocalDateTime(),
+                if (t.isIncome) "Income" else "Expense",
+                accs[t.accountId]?.name ?: "",
+                cats[t.categoryId]?.name ?: "",
+                t.subId?.let { cats[it]?.name } ?: "",
+                BigDecimal(t.amount).movePointLeft(2),
+                t.note,
+            )
+        }
+        ctx.out(uri).use { Xlsx.write(it, "Transactions", listOf("Date", "Type", "Account", "Category", "Subcategory", "Amount", "Note"), rows) }
+        txns.size
+    }
+
     // ---------- CSV import ----------
     fun parseCsv(text: String): List<List<String>> {
         val firstLine = text.lineSequence().firstOrNull().orEmpty()
@@ -102,14 +124,22 @@ object Backup {
     private fun parseDate(raw: String): Long? {
         val s = raw.trim()
         val zone = ZoneId.systemDefault()
+        // Excel stores dates as a day count since 1899-12-30, with the time as a fraction
+        s.toDoubleOrNull()?.takeIf { it in 20000.0..80000.0 }?.let { serial ->
+            val days = kotlin.math.floor(serial).toLong()
+            val secs = Math.round((serial - days) * 86400)
+            return LocalDate.of(1899, 12, 30).plusDays(days).atStartOfDay().plusSeconds(secs)
+                .let { if (secs == 0L) it.withHour(12) else it }
+                .atZone(zone).toInstant().toEpochMilli()
+        }
         dateTimeFormats.forEach { f -> runCatching { return LocalDateTime.parse(s, f).atZone(zone).toInstant().toEpochMilli() } }
         dateFormats.forEach { f -> runCatching { return LocalDate.parse(s, f).atTime(12, 0).atZone(zone).toInstant().toEpochMilli() } }
         return null
     }
 
     private fun parseAmount(raw: String): Long? {
-        val cleaned = raw.filter { it.isDigit() || it == '.' || it == '-' }
-        val bd = cleaned.toBigDecimalOrNull() ?: return null
+        val bd = raw.trim().toBigDecimalOrNull()
+            ?: raw.filter { it.isDigit() || it == '.' || it == '-' }.toBigDecimalOrNull() ?: return null
         return bd.multiply(BigDecimal(100)).setScale(0, RoundingMode.HALF_UP).toLong()
     }
 
@@ -123,21 +153,41 @@ object Backup {
         }
     }
 
-    suspend fun importCsv(ctx: Context, uri: Uri): ImportResult = withContext(Dispatchers.IO) {
+    /** Imports an Excel (.xlsx) or CSV file; the format is detected from the file itself. */
+    suspend fun importFile(ctx: Context, uri: Uri): ImportResult = withContext(Dispatchers.IO) {
+        val bytes = (ctx.contentResolver.openInputStream(uri) ?: error("Couldn't open the file")).use { it.readBytes() }
+        val rows = when {
+            bytes.size > 4 && bytes[0] == 'P'.code.toByte() && bytes[1] == 'K'.code.toByte() -> Xlsx.read(bytes)
+            bytes.size > 4 && bytes[0] == 0xD0.toByte() && bytes[1] == 0xCF.toByte() ->
+                throw IllegalArgumentException("This is an old .xls file. Open it in Excel or Google Sheets, save it as .xlsx, then import that file.")
+            else -> parseCsv(String(bytes, Charsets.UTF_8).removePrefix("\uFEFF"))
+        }
+        importRows(ctx, rows)
+    }
+
+    private val dateHeaders = listOf("date", "time", "date/time", "period", "day")
+    private val amountHeaders = listOf("amount", "value", "sum", "bdt")
+
+    private suspend fun importRows(ctx: Context, all: List<List<String>>): ImportResult {
         val dao = ctx.app().dao
-        val rows = parseCsv(ctx.readText(uri))
+        // Some exports put a title above the header row: find the real header in the first rows
+        val headerIdx = all.take(10).indexOfFirst { r ->
+            val cells = r.map { it.trim().lowercase() }
+            cells.any { it in dateHeaders } && cells.any { c -> amountHeaders.any { c == it || c.startsWith(it) } }
+        }.coerceAtLeast(0)
+        val rows = all.drop(headerIdx)
         require(rows.size >= 2) { "The file has no transactions" }
         val header = rows.first().map { it.trim().lowercase() }
         fun col(vararg names: String): Int {
             val exact = header.indexOfFirst { it in names }
             return if (exact >= 0) exact else header.indexOfFirst { h -> names.any { h.startsWith(it) } }
         }
-        val iDate = col("date", "time", "date/time")
+        val iDate = col(*dateHeaders.toTypedArray())
         val iType = col("type", "income/expense", "in/out", "kind")
         val iAcc = col("account", "accounts", "wallet")
         val iCat = col("category")
         val iSub = col("subcategory", "sub category", "sub-category")
-        val iAmt = col("amount", "value", "sum")
+        val iAmt = col(*amountHeaders.toTypedArray())
         val iNote = col("note", "memo", "description", "notes")
         require(iDate >= 0 && iAmt >= 0) { "Couldn't find Date and Amount columns" }
 
@@ -157,6 +207,7 @@ object Backup {
             val signed = parseAmount(get(iAmt))
             if (date == null || signed == null || signed == 0L) { skipped++; continue }
             val typeText = get(iType).lowercase()
+            if ("transfer" in typeText) { skipped++; continue }
             val isIncome = when {
                 typeText.startsWith("inc") || typeText == "in" || typeText == "+" -> true
                 typeText.startsWith("exp") || typeText == "out" || typeText == "-" -> false
@@ -183,7 +234,7 @@ object Backup {
             out.add(t)
         }
         if (out.isNotEmpty()) dao.insertTxns(out)
-        ImportResult(out.size, dup, skipped)
+        return ImportResult(out.size, dup, skipped)
     }
 
     // ---------- JSON backup ----------

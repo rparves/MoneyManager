@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -108,6 +109,7 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
     var showTime by remember { mutableStateOf(false) }
     var editAccount by remember { mutableStateOf<AccountEdit?>(null) }
     var pendingRestore by remember { mutableStateOf<Uri?>(null) }
+    var pendingSqlite by remember { mutableStateOf<Uri?>(null) }
     var busy by remember { mutableStateOf(false) }
 
     fun toast(msg: String) = Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
@@ -157,6 +159,12 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
     }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) runTask { Backup.writeBackup(ctx, uri); "Backup saved" }
+    }
+    val sqliteExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        if (uri != null) runTask { "Exported database with ${Backup.exportSqlite(ctx, uri)} transactions" }
+    }
+    val sqliteImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) pendingSqlite = uri
     }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) pendingRestore = uri
@@ -351,6 +359,12 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                 NavRow(Icons.Outlined.FileDownload, "Import from Excel or CSV", "Columns: Date, Type, Account, Category, Subcategory, Amount, Note") {
                     importLauncher.launch(arrayOf("*/*"))
                 }
+                NavRow(Icons.Outlined.Storage, "Export SQLite database", "The full database as a .sqlite file") {
+                    sqliteExportLauncher.launch("MoneyManager-$today.sqlite")
+                }
+                NavRow(Icons.Outlined.Storage, "Import SQLite database", "Replaces the data on this phone") {
+                    sqliteImportLauncher.launch(arrayOf("*/*"))
+                }
             }
 
             Panel {
@@ -432,6 +446,21 @@ fun SettingsScreen(onBack: () -> Unit, onCategories: () -> Unit) {
                 }) { Text("Restore", color = ex.expense, fontWeight = FontWeight.Medium) }
             },
             dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Cancel") } },
+        )
+    }
+
+    pendingSqlite?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingSqlite = null },
+            title = { Text("Import this database?") },
+            text = { Text("All transactions, categories, accounts, goals and bills in the app will be replaced by the ones in this file. Consider exporting first.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingSqlite = null
+                    runTask { "Imported ${Backup.importSqlite(ctx, uri)} transactions from the database" }
+                }) { Text("Import", color = ex.expense, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = { TextButton(onClick = { pendingSqlite = null }) { Text("Cancel") } },
         )
     }
 

@@ -1,6 +1,9 @@
 package com.rparves.moneymanager.data
 
 import android.content.Context
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import java.io.File
 import android.net.Uri
 import android.provider.DocumentsContract
 import com.rparves.moneymanager.app
@@ -64,6 +67,85 @@ object Backup {
             }
         }
         txns.size
+    }
+
+    // ---------- SQLite database ----------
+    private const val DB_NAME = "money.db"
+
+    /** Copies the app's own database file. Opens in any SQLite tool (DB Browser for SQLite, etc.). */
+    suspend fun exportSqlite(ctx: Context, uri: Uri): Int = withContext(Dispatchers.IO) {
+        val app = ctx.app()
+        // Fold the write-ahead log into the main file so the copy is complete
+        app.db.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").use { it.moveToFirst() }
+        val file = ctx.getDatabasePath(DB_NAME)
+        ctx.out(uri).use { o -> file.inputStream().use { it.copyTo(o) } }
+        app.dao.allTxns().size
+    }
+
+    private fun Cursor.long(col: String): Long = getLong(getColumnIndexOrThrow(col))
+    private fun Cursor.str(col: String): String = getColumnIndex(col).let { if (it < 0 || isNull(it)) "" else getString(it) }
+    private fun Cursor.longOrNull(col: String): Long? = getColumnIndex(col).let { if (it < 0 || isNull(it)) null else getLong(it) }
+
+    /** Reads a Money Manager .sqlite file and replaces all data in the app with it. Returns transactions restored. */
+    suspend fun importSqlite(ctx: Context, uri: Uri): Int {
+        val tmp = File(ctx.cacheDir, "import-${System.currentTimeMillis()}.db")
+        val data = withContext(Dispatchers.IO) {
+            (ctx.contentResolver.openInputStream(uri) ?: error("Couldn't open the file")).use { i -> tmp.outputStream().use { i.copyTo(it) } }
+            val head = tmp.inputStream().use { it.readNBytesCompat(16) }
+            require(String(head, Charsets.US_ASCII).startsWith("SQLite format 3")) { "This isn't a SQLite database file" }
+            val db = SQLiteDatabase.openDatabase(tmp.path, null, SQLiteDatabase.OPEN_READWRITE)
+            try {
+                fun cols(t: String): Set<String> = db.rawQuery("PRAGMA table_info(`$t`)", null).use { c ->
+                    buildSet { while (c.moveToNext()) add(c.getString(1)) }
+                }
+                val need = mapOf(
+                    "transactions" to listOf("id", "isIncome", "amount", "categoryId", "accountId", "date"),
+                    "accounts" to listOf("id", "name"),
+                    "categories" to listOf("id", "name", "isIncome", "color"),
+                )
+                need.forEach { (t, c) -> require(cols(t).containsAll(c)) { "This SQLite file isn't a Money Manager database" } }
+                val hasGoals = cols("goals").containsAll(listOf("id", "name", "target"))
+                val hasBills = cols("bills").containsAll(listOf("id", "name", "amount", "dueDay"))
+
+                val accounts = db.rawQuery("SELECT * FROM accounts", null).use { c ->
+                    buildList { while (c.moveToNext()) add(Account(c.long("id"), c.str("name"), c.longOrNull("initial") ?: 0, c.str("type").ifBlank { "cash" })) }
+                }
+                require(accounts.isNotEmpty()) { "The database has no accounts" }
+                val categories = db.rawQuery("SELECT * FROM categories", null).use { c ->
+                    buildList { while (c.moveToNext()) add(Category(c.long("id"), c.str("name"), c.long("isIncome") != 0L, c.long("color"), c.longOrNull("parentId"))) }
+                }
+                val txns = db.rawQuery("SELECT * FROM transactions", null).use { c ->
+                    buildList {
+                        while (c.moveToNext()) add(
+                            Txn(c.long("id"), c.long("isIncome") != 0L, c.long("amount"), c.long("categoryId"), c.long("accountId"), c.str("note"), c.long("date"), c.longOrNull("subId"))
+                        )
+                    }
+                }
+                val goals = if (!hasGoals) emptyList() else db.rawQuery("SELECT * FROM goals", null).use { c ->
+                    buildList { while (c.moveToNext()) add(Goal(c.long("id"), c.str("name"), c.long("target"), c.longOrNull("saved") ?: 0)) }
+                }
+                val bills = if (!hasBills) emptyList() else db.rawQuery("SELECT * FROM bills", null).use { c ->
+                    buildList { while (c.moveToNext()) add(Bill(c.long("id"), c.str("name"), c.long("amount"), c.long("dueDay").toInt(), c.str("paidMonth"))) }
+                }
+                Snapshot(accounts, categories, txns, goals, bills)
+            } finally {
+                db.close()
+                listOf("", "-wal", "-shm", "-journal").forEach { File(tmp.path + it).delete() }
+            }
+        }
+        withContext(Dispatchers.IO) { ctx.app().dao.replaceAll(data.accounts, data.categories, data.txns, data.goals, data.bills) }
+        return data.txns.size
+    }
+
+    private class Snapshot(
+        val accounts: List<Account>, val categories: List<Category>, val txns: List<Txn>, val goals: List<Goal>, val bills: List<Bill>,
+    )
+
+    private fun java.io.InputStream.readNBytesCompat(n: Int): ByteArray {
+        val buf = ByteArray(n)
+        var read = 0
+        while (read < n) { val r = read(buf, read, n - read); if (r < 0) break; read += r }
+        return buf.copyOf(read)
     }
 
     // ---------- Excel export ----------

@@ -36,6 +36,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,11 +79,21 @@ fun HomeScreen(
     val dao = app.dao
     val cur = app.prefs.currency
     val ex = LocalExtra.current
-    val ym = remember { YearMonth.now() }
+    // Re-check the month whenever the app comes back to the foreground, so Home rolls over on the 1st
+    var ym by remember { mutableStateOf(YearMonth.now()) }
+    LifecycleResumeEffect(Unit) {
+        ym = YearMonth.now()
+        onPauseOrDispose { }
+    }
+    var listMode by rememberSaveable { mutableIntStateOf(0) } // 0 expenses, 1 income, 2 all
     val initial by remember { dao.initialSum() }.collectAsState(0L)
     val net by remember { dao.net() }.collectAsState(0L)
-    val month by remember { val r = monthRange(ym); dao.txnsBetween(r.first, r.second) }.collectAsState(emptyList())
-    val recent by remember { dao.recent(25) }.collectAsState(emptyList())
+    val month by remember(ym) { val r = monthRange(ym); dao.txnsBetween(r.first, r.second) }.collectAsState(emptyList())
+    val shown = when (listMode) {
+        0 -> month.filter { !it.t.isIncome }
+        1 -> month.filter { it.t.isIncome }
+        else -> month
+    }
     val bills by remember { dao.bills() }.collectAsState(emptyList())
     val accounts by remember { dao.accountBalances() }.collectAsState(emptyList())
 
@@ -182,23 +197,43 @@ fun HomeScreen(
         }
 
         item {
-            Row(Modifier.padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Recent", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                if (recent.isNotEmpty()) TextButton(onClick = onSeeAll) { Text("See all", color = ex.expense) }
+            Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("This month", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            when (listMode) {
+                                0 -> "${shown.size} expenses · ${money(expense, cur)}"
+                                1 -> "${shown.size} income entries · ${money(income, cur)}"
+                                else -> "${shown.size} entries"
+                            },
+                            fontSize = 12.sp, color = ex.muted,
+                        )
+                    }
+                    TextButton(onClick = onSeeAll) { Text("Past months", color = ex.expense) }
+                }
+                Segmented(listOf("Expenses", "Income", "All"), listMode, { listMode = it })
             }
         }
-        if (recent.isEmpty()) {
+        if (shown.isEmpty()) {
             item {
                 Text(
-                    "Nothing recorded yet. Tap + to add your first expense, or scan a receipt.",
+                    when (listMode) {
+                        1 -> "No income recorded in ${ym.label()} yet."
+                        else -> "Nothing spent in ${ym.label()} yet. Tap + to add an expense, or scan a receipt."
+                    },
                     color = ex.muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 20.dp),
                 )
             }
         } else {
-            recent.groupBy { it.t.date.toLocalDate() }.forEach { (d, list) ->
+            shown.groupBy { it.t.date.toLocalDate() }.forEach { (d, list) ->
                 item(key = "d$d") {
                     Column {
-                        Text(relativeDay(d), fontSize = 12.sp, color = ex.muted, modifier = Modifier.padding(start = 20.dp, bottom = 2.dp))
+                        Row(Modifier.padding(start = 20.dp, end = 20.dp, bottom = 2.dp)) {
+                            Text(relativeDay(d), fontSize = 12.sp, color = ex.muted, modifier = Modifier.weight(1f))
+                            val dayOut = list.filter { !it.t.isIncome }.sumOf { it.t.amount }
+                            if (dayOut > 0) Text(money(dayOut, cur), fontSize = 12.sp, color = ex.muted)
+                        }
                         list.forEachIndexed { i, r ->
                             if (i > 0) HorizontalDivider(Modifier.padding(start = 70.dp, end = 20.dp), color = ex.border)
                             TxnItem(r, cur) { onEdit(r.t.id) }
